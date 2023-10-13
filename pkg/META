@@ -1,0 +1,8 @@
+description = "ZIP archive and deflate codec for OCaml"
+version = "%%VERSION_NUM%%"
+requires = ""
+archive(byte) = "zipc.cma"
+archive(native) = "zipc.cmxa"
+plugin(byte) = "zipc.cma"
+plugin(native) = "zipc.cmxs"
+exists_if = "zipc.cma zipc.cmxa"

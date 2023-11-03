@@ -3,7 +3,7 @@
    SPDX-License-Identifier: ISC
   ---------------------------------------------------------------------------*)
 
-(* UI to select files and zip them *)
+(* UI to select a directory and zip them *)
 
 open Brr
 

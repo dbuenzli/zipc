@@ -212,7 +212,7 @@ module File : sig
   (** [max_size] is the maximal file size representable on this
       platform in the file metadata. This is the minimum between
       {!Int.max_int} and [4294967295] (4Go), the maximum file size in
-      non-ZIP64 ZIP archives. Archives who have members whose size
+      non-ZIP64 ZIP archives. Archives that have members whose size
       exceeds this value error on {!Zipc.of_binary_string}.  *)
 end
 

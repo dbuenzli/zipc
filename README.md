@@ -46,6 +46,9 @@ examples in [`test`].
 
 ## Acknowledgments 
 
+A grant from the [OCaml Software Foundation] helped to bring the first
+public release of `zipc`.
+
 The deflate compressor and general information about ZIP files
 benefited from Hans Wennborg's thorough [article] about Zip files. The
 deflate decompressor implementation started as a port of Joergen
@@ -53,3 +56,4 @@ Ibsen's [`tinf`] library.
 
 [`tinf`]: https://github.com/jibsen/tinf
 [article]: https://www.hanshq.net/zip.html
+[OCaml Software Foundation]: http://ocaml-sf.org/

@@ -8,7 +8,7 @@ supported by using third-party libraries.
 
 See the {{!quick}quick start} and the {{!Zipc.limitations}limitations}.
 
-{1:cmarkit_library Library [zipc]}
+{1:zipc_library Library [zipc]}
 
 {!modules:
 Zipc
@@ -94,7 +94,7 @@ let zip_file ?(compress = true) ~file ~archive () =
 
 Note that in this example the actual permissions and modification time
 of [file] are not preserved in the archive, we rely on defaults. A bit
-more work with the [Unix] module would be needed. See for example the
+more work with the {!Unix} module would be needed. See for example the
 source of the [zipc] tool in the distribution.
 
 If you would like to see [js_of_ocaml] examples look at the [test]

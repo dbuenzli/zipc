@@ -261,7 +261,7 @@ module Member = struct
     let is_dir = match m.kind with Dir -> 'd' | File _ -> '-' in
     let comp = match m.kind with
     | Dir -> "none"
-    | File f -> strf "% 4s" (compression_to_string f.compression)
+    | File f -> strf "%4s" (compression_to_string f.compression)
     in
     let encrypted = match m.kind with
     | File f when File.is_encrypted f -> 'X' | _ -> ' '

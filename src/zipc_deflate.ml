@@ -98,7 +98,8 @@ end
 let crc_error e f =
   Error (Printf.sprintf "Checksum mismatch, expected %lx found %lx)" e f)
 
-module Crc_32 = struct (* Improve this to improve zip member decoding time *)
+module Crc_32 = struct
+  (* Slice-by-4 technique from https://create.stephan-brumme.com/crc32 *)
   type t = uint32
   type update = uint32
   let equal = Int32.equal
@@ -106,26 +107,46 @@ module Crc_32 = struct (* Improve this to improve zip member decoding time *)
   let check ~expect:e ~found:f = if equal e f then Ok () else crc_error e f
   let poly = 0xedb88320l
   let table =
-    let init i =
-      let open Uint32.Syntax in
+    let open Uint32.Syntax in
+    let t = Bigarray.Array2.create Bigarray.int32 Bigarray.c_layout 256 256 in
+    for i = 0 to 0xFF do
       let c = ref (Uint32.of_int i) in
       for k = 0 to 7 do
         c := if !c land 1l <> 0l then (poly lxor (!c lsr 1)) else (!c lsr 1);
-      done; !c
-    in
-    Bigarray.Array1.init Bigarray.int32 Bigarray.c_layout 256 init
+      done;
+      Bigarray.Array2.set t 0 i !c
+    done;
+    for i = 0 to 0xFF do
+      let value t k i =
+        Bigarray.Array2.((get t k i lsr 8) lxor
+                         (get t 0 (Uint32.to_int (get t k i land 0xFFl))))
+      in
+      Bigarray.Array2.set t 1 i (value t 0 i);
+      Bigarray.Array2.set t 2 i (value t 1 i);
+      Bigarray.Array2.set t 3 i (value t 2 i)
+    done;
+    t
 
   let init = Uint32.max_int
   let finish u = Uint32.to_int32 Uint32.Syntax.(u lxor Uint32.max_int)
   let string_update c s ~start ~len =
     let open Uint32.Syntax in
     let c = ref c in
-    let i = ref start and max = start + len - 1 in
+    let i = ref start and max = (start + len - 1) - 3 in
     while (!i <= max) do
-      let byte = Uint32.of_int (String.get_uint8 s !i) in
+      let u = String.get_int32_le s !i in
+      let u = !c lxor u in
+      c :=
+        Bigarray.Array2.get table 3 (Uint32.to_int ((u       ) land 0xFFl)) lxor
+        Bigarray.Array2.get table 2 (Uint32.to_int ((u lsr  8) land 0xFFl)) lxor
+        Bigarray.Array2.get table 1 (Uint32.to_int ((u lsr 16) land 0xFFl)) lxor
+        Bigarray.Array2.get table 0 (Uint32.to_int ((u lsr 24)           ));
+        i := !i + 4;
+    done;
+    for j = !i to max + 3 do
+      let byte = Uint32.of_int (String.get_uint8 s j) in
       let k = Uint32.to_int ((!c lxor byte) land 0xffl) in
-      c := (!c lsr 8) lxor (Bigarray.Array1.get table k);
-      incr i;
+      c := (!c lsr 8) lxor (Bigarray.Array2.get table 0 k);
     done;
     !c
 

@@ -20,28 +20,6 @@ type uint16 = int
 type uint32 = int32
 (** The type for unsigned 32-bit integers. *)
 
-(**/**)
-module Uint32 : sig
-  val boxed : bool
-  type t
-  val of_int : int -> t
-  val to_int : t -> int
-  val to_int32 : t -> int32
-  val high_lit : string -> t
-  val zero : t
-  val max_int : t
-  module Syntax : sig
-    val ( land ) : t -> t -> t
-    val ( lor ) : t -> t -> t
-    val ( lxor ) : t -> t -> t
-    val ( lsr ) : t -> int -> t
-    val ( lsl ) : t -> int -> t
-    val ( #+ ) : t -> t -> t
-    val ( #- ) : t -> t -> t
-  end
-end
-(**/**)
-
 (** ZIP CRC-32 checksums. *)
 module Crc_32 : sig
 

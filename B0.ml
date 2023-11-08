@@ -10,9 +10,6 @@ let cmdliner = B0_ocaml.libname "cmdliner"
 let unix = B0_ocaml.libname "unix"
 
 let zipc_lib =
-  (* N.B. when topkg is dropped we need to do the dance for 32-bit platforms.
-     We can likely do it with build watermarks when they become available.
-     Would also be nice to have it as a config key for testing. *)
   let srcs = [ `Dir ~/"src" ] in
   let requires = [] in
   B0_ocaml.lib zipc ~name:"zipc-lib" ~srcs ~requires

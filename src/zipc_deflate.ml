@@ -9,9 +9,6 @@ let failwithf fmt = Printf.ksprintf failwith fmt
 let default_length ?len s start = match len with
 | None -> String.length s - start | Some size -> size
 
-type uint16 = int
-type uint32 = int32
-
 (* Extensible byte buffer. Stdlib.Buffer falls short for [recopy]: we
    can't self-blit. Also on decode it's nice to be able to access the
    buffer directly for CRCs. *)
@@ -73,24 +70,16 @@ module Buf = struct
     end
 end
 
-(* Uint32. If [int] is large enough we use it for unboxing uint32 CRC
-   computations; the rest of deflate is fine with [int]s everywhere.
-   It's more efficient but only for CRC-32 it seems, which would be
-   nice to improve since it remains quite a bottleneck (various things
-   have been tried). The current scheme has the annoying property of
-   providing different jsoo implementations according to the bitness
-   of the platform one compiles on. Since we do it always in bulk per
-   compression block it would be nice to be able to simply rely on
-   local unboxing of these int32 values.  *)
+(* Unsigned numbers *)
 
-module Uint32_as_int32 = struct
-  let boxed = true
-  type t = int32
+type uint16 = int
+type uint32 = int32
+
+module Uint32 = struct
+  type t = uint32
   let of_int = Int32.of_int
   let to_int = Int32.to_int
   let to_int32 = Fun.id
-  let high_lit = Int32.of_string
-  let zero = 0l
   let max_int = 0xFFFF_FFFFl
   module Syntax = struct
     let (land) = Int32.logand
@@ -104,69 +93,41 @@ module Uint32_as_int32 = struct
   end
 end
 
-module Uint32_as_int = struct
-  let boxed = false
-  type t = int [@@immediate]
-  let of_int = Fun.id
-  let to_int = Fun.id
-  let to_int32 = Int32.of_int
-  let high_lit = int_of_string (* compiles literals on {31,32}-bit ints *)
-  let zero = 0
-  let max_int = high_lit "0xFFFF_FFFF"
-  module Syntax = struct
-    let (land) = Stdlib.(land)
-    let (lor) = Stdlib.(lor)
-    let (lxor) = Stdlib.(lxor)
-    let (lsr) = Stdlib.(lsr)
-    let (lsl) = Stdlib.(lsl)
-    let (mod) = Stdlib.(mod)
-    let ( #+ ) = ( + )
-    let ( #- ) = ( - )
-  end
-end
-
-module Uint32 =
-  (* In distribution builds `pkg/pkg.ml` turns [Uint32_as_int] into
-     [Uint32_as_int32] on 32-bit platforms. Note that the [Uint32] is only
-     used by the CRC modules. *)
-  Uint32_as_int(*32*)
-
 (* CRCs. *)
 
 let crc_error e f =
   Error (Printf.sprintf "Checksum mismatch, expected %lx found %lx)" e f)
 
-module Crc_32 = struct
-  type t = Int32.t
-  type update = Uint32.t
-  type table = Uint32.t Array.t
+module Crc_32 = struct (* Improve this to improve zip member decoding time *)
+  type t = uint32
+  type update = uint32
   let equal = Int32.equal
   let pp ppf crc = Format.fprintf ppf "%lx" crc
   let check ~expect:e ~found:f = if equal e f then Ok () else crc_error e f
-  let poly = Uint32.high_lit "0xedb88320"
+  let poly = 0xedb88320l
   let table =
-    let open Uint32.Syntax in
     let init i =
+      let open Uint32.Syntax in
       let c = ref (Uint32.of_int i) in
       for k = 0 to 7 do
-        c :=
-          if !c land (Uint32.of_int 0x1) <> Uint32.zero
-          then (poly lxor (!c lsr 1)) else (!c lsr 1);
+        c := if !c land 1l <> 0l then (poly lxor (!c lsr 1)) else (!c lsr 1);
       done; !c
     in
-    Array.init 256 init
+    Bigarray.Array1.init Bigarray.int32 Bigarray.c_layout 256 init
 
   let init = Uint32.max_int
   let finish u = Uint32.to_int32 Uint32.Syntax.(u lxor Uint32.max_int)
   let string_update c s ~start ~len =
     let open Uint32.Syntax in
-    let rec loop c s i max =
-      if i > max then c else
-      let k = Stdlib.(Uint32.to_int c lxor (String.get_uint8 s i) land 0xff) in
-      let c = (Array.get table k) lxor (c lsr 8) in
-      loop c s (i + 1) max
-    in
-    loop c s start (start + len - 1)
+    let c = ref c in
+    let i = ref start and max = start + len - 1 in
+    while (!i <= max) do
+      let byte = Uint32.of_int (String.get_uint8 s !i) in
+      let k = Uint32.to_int ((!c lxor byte) land 0xffl) in
+      c := (!c lsr 8) lxor (Bigarray.Array1.get table k);
+      incr i;
+    done;
+    !c
 
   let[@inline] bytes_update u b ~start ~len =
     string_update u (Bytes.unsafe_to_string b) ~start ~len
@@ -177,19 +138,18 @@ module Crc_32 = struct
 end
 
 module Adler_32 = struct
-  type t = Int32.t
-  type update = Uint32.t
+  type t = uint32
+  type update = uint32
   let equal = Int32.equal
   let pp ppf crc = Format.fprintf ppf "%lx" crc
   let check ~expect:e ~found:f = if equal e f then Ok () else crc_error e f
-  let base = Uint32.of_int 65521
-  let xFFFF = Uint32.of_int 0xFFFF
-  let init = Uint32.of_int 1
+  let base = 65521l
+  let init = 1l
   let finish crc = Uint32.to_int32 crc
   let string_update a s ~start ~len =
     let open Uint32.Syntax in
     let[@inline] byte s k = Uint32.of_int (String.get_uint8 s k) in
-    let s1 = ref (a land xFFFF) and s2 = ref (a lsr 16) in
+    let s1 = ref (a land 0xFFFFl) and s2 = ref (a lsr 16) in
     let start = ref start and max = start + len - 1 in
     let block_len = ref Stdlib.(len mod 5552) in
     while (!start <= max) do
@@ -224,7 +184,7 @@ end
 type crc_op = Adler_32 | Crc_32 | Nop
 
 let crc_op_init = function
-| Adler_32 -> Adler_32.init | Crc_32 -> Crc_32.init | Nop -> Uint32.zero
+| Adler_32 -> Adler_32.init | Crc_32 -> Crc_32.init | Nop -> 0l
 
 let crc_op_finish op crc = match op with
 | Adler_32 -> Adler_32.finish crc | Crc_32 -> Crc_32.finish crc | Nop -> 0l

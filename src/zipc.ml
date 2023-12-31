@@ -572,7 +572,7 @@ let write_bytes ?(first = default_first) z ?(start = 0) b =
       let acc = encode_member b m (start, []) in
       fold (encode_member b) (remove first z) acc
   in
-  let eocd_start = List.fold_left (encode_cd_member b) cd_start ms in
+  let eocd_start = List.fold_left (encode_cd_member b) cd_start (List.rev ms) in
   let cd_size = eocd_start - cd_start in
   encode_eocd b eocd_start ~member_count:count ~cd_start ~cd_size
 

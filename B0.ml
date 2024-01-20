@@ -33,7 +33,7 @@ let test ~src ~doc =
   let srcs = [ `File src ] in
   let requires = [zipc] in
   let meta = B0_meta.empty |> B0_meta.(tag test) in
-  B0_ocaml.exe (Fpath.basename ~no_ext:true src) ~doc ~meta ~srcs ~requires
+  B0_ocaml.exe (Fpath.basename ~strip_ext:true src) ~doc ~meta ~srcs ~requires
 
 let test' = test ~src:"test.ml" ~doc:"Basic tests"
 let speed_crc_tests = test ~src:"test_crc_speed.ml" ~doc:"CRCs speed test"
@@ -43,14 +43,14 @@ let jsoo =
   let srcs = [ `File ~/"test/jsoo_unzip.ml" ] in
   let requires = [brr; zipc] in
   let meta = B0_meta.empty |> B0_meta.(tag test) in
-  B0_jsoo.web "jsoo_unzip" ~doc ~meta ~srcs ~requires
+  B0_jsoo.html_page "jsoo_unzip" ~doc ~meta ~srcs ~requires
 
 let jsoo =
   let doc = "Test zip creation in the browser" in
   let srcs = [ `File ~/"test/jsoo_zip.ml" ] in
   let requires = [brr; zipc] in
   let meta = B0_meta.empty |> B0_meta.(tag test) in
-  B0_jsoo.web "jsoo_zip" ~doc ~meta ~srcs ~requires
+  B0_jsoo.html_page "jsoo_zip" ~doc ~meta ~srcs ~requires
 
 (* Actions *)
 

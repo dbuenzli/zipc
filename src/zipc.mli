@@ -109,9 +109,11 @@ module File : sig
       {ul
       {- [start] defaults to [0].}
       {- [compressed_size] defaults to the string's length minus [start].}
-      {- [version_made_by] and [version_needed_to_extract]
-         default to [0x314] indicating UNIX (for encoding file permissions)
-         and PKZip 2.0.}
+      {- [version_made_by] defaults to [0x314] indicating UNIX
+         (for encoding file permissions) and PKZIP 2.0.}
+      {- [version_needed_to_extract] defaults to [20] indicating
+         PKZIP 2.0. This may need tweaking depending on [compression]
+         but decoders likely do not care (see 4.4.3.2 in the specification).}
       {- [gp_flags] defaults to [0x800], indicating UTF-8 encoded filenames.}}
 
       [Error _] is returned with a suitable error message if any of

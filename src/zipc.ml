@@ -139,7 +139,8 @@ module File = struct
   let gp_is_encrypted = 0x1
   let gp_utf_8 = 0x800
   let gp_default = gp_utf_8
-  let version_default = (3 (* UNIX *) lsl 8) lor 20 (* PKZIP 2.0 *)
+  let version_made_by_default = (3 (* UNIX *) lsl 8) lor 20 (* PKZIP 2.0 *)
+  let version_needed_to_extract_default = 20 (* PKZIP 2.0 *)
 
   type t =
     { version_made_by : Zipc_deflate.uint16;
@@ -153,8 +154,8 @@ module File = struct
       decompressed_crc_32 : Zipc_deflate.Crc_32.t }
 
   let make
-      ?(version_made_by = version_default)
-      ?(version_needed_to_extract = version_default)
+      ?(version_made_by = version_made_by_default)
+      ?(version_needed_to_extract = version_needed_to_extract_default)
       ?(gp_flags = gp_default) ?(start = 0) ?compressed_size:len
       ~compression compressed_bytes ~decompressed_size ~decompressed_crc_32
     =
@@ -450,7 +451,7 @@ let encoding_size z =
 
 let encode_member b m (start, acc) =
   let encode_dir_lfh b start =
-    Bytes.set_uint16_le b (start +  4) File.version_default;
+    Bytes.set_uint16_le b (start +  4) File.version_needed_to_extract_default;
     Bytes.set_uint16_le b (start +  6) File.gp_default;
     Bytes.set_uint16_le b (start +  8) (compression_to_int Stored);
     Bytes.set_int32_le  b (start + 14) 0l (* CRC *);
@@ -491,8 +492,8 @@ let encode_member b m (start, acc) =
 
 let encode_cd_member b start (lfh_offset, m) =
   let encode_dir_cd_member b start =
-    Bytes.set_uint16_le b (start +  4) File.version_default;
-    Bytes.set_uint16_le b (start +  6) File.version_default;
+    Bytes.set_uint16_le b (start +  4) File.version_made_by_default;
+    Bytes.set_uint16_le b (start +  6) File.version_needed_to_extract_default;
     Bytes.set_uint16_le b (start +  8) File.gp_default;
     Bytes.set_uint16_le b (start + 10) (compression_to_int Stored);
     Bytes.set_int32_le  b (start + 16) 0l (* CRC *);

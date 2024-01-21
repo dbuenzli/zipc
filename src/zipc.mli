@@ -355,14 +355,13 @@ val of_binary_string : string -> (t, string) result
 val encoding_size : t -> int
 (** [encoding_size z] is the number of bytes needed to encode [z]. *)
 
-val to_binary_string : ?first:Fpath.t -> t -> (string, string) result
+val to_binary_string : ?order:Fpath.t list -> t -> (string, string) result
 (** [to_binary_string z] is the encoding of archive [z]. [Error _] is returned
     with a suitable error message in case [z] has more members than
     {!Member.max}.
 
-    If a member with path [first] exists in [z] then this member's
-    data is written first in the ZIP archive. It defaults to
-    ["mimetype"] to support the EPUB
+    The members listed in [order] that exist in [z] are written first and in
+    order in the ZIP archive. It defaults to [["mimetype"]] to support the EPUB
     {{:https://www.w3.org/TR/epub-33/#sec-zip-container-mime}OCF ZIP
     container} constraint (you are however in charge of making sure
     this member is not compressed in this case).
@@ -371,11 +370,11 @@ val to_binary_string : ?first:Fpath.t -> t -> (string, string) result
     {ul
     {- {!Member.mtime} that are before the {!Ptime.dos_epoch}
        are silently truncated to that date.}
-    {- Except for [first], member data is encoded in the (deterministic)
+    {- Except for [order], member data is encoded in the (deterministic)
        increasing lexical order of their path.}} *)
 
 val write_bytes :
-  ?first:Fpath.t -> t -> ?start:int -> bytes -> (unit, string) result
+  ?order:Fpath.t list -> t -> ?start:int -> bytes -> (unit, string) result
 (** [write_bytes t ~start b] writes {!to_binary_string} to [bytes] starting
     at [start] (defaults to [0]).
 

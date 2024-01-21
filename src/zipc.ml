@@ -562,22 +562,27 @@ let encode_eocd b start ~member_count ~cd_start ~cd_size =
 
 let default_first = "mimetype"
 
-let write_bytes ?(first = default_first) z ?(start = 0) b =
+let write_bytes ?(order = [default_first]) z ?(start = 0) b =
   if is_empty z
   then encode_eocd b start ~member_count:0 ~cd_start:0 ~cd_size:0 else
   let count = member_count z in
   if count > Member.max then Error (Member.err_count count) else
-  let cd_start, ms = match String_map.find_opt first z with
-  | None ->  fold (encode_member b) z (start, [])
-  | Some m ->
-      let acc = encode_member b m (start, []) in
-      fold (encode_member b) (remove first z) acc
+  let cd_start, ms =
+    let acc, z =
+      List.fold_left (fun (acc, z) key ->
+          match String_map.find_opt key z with
+          | None ->  (acc, z)
+          | Some m -> (encode_member b m acc, remove key z))
+        ((start, []), z) order
+    in
+    fold (encode_member b) z acc
   in
   let eocd_start = List.fold_left (encode_cd_member b) cd_start (List.rev ms) in
   let cd_size = eocd_start - cd_start in
   encode_eocd b eocd_start ~member_count:count ~cd_start ~cd_size
 
-let to_binary_string ?first z =
+let to_binary_string ?order z =
   let b = Bytes.create (encoding_size z) in
-  let* () = write_bytes ?first z b in
+  let* () = write_bytes ?order z b in
   Ok (Bytes.unsafe_to_string b)
+

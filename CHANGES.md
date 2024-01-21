@@ -1,5 +1,4 @@
 
-
 - Decompression limits in `Zipc_deflate` (breaking change). When the
   `decompression_size` argument of decompression functions is
   specified, decompression errors as soon as the decompressed size
@@ -13,6 +12,9 @@
 - `Zipc.File.make`: fix default value of `version_needed_to_extract`. It
   was the same as `version_made_by` which is wrong. Now defaults
   to `20`(PKZip 2.0). Thanks to Valentin Gatien-Baron for the report (#3).
+
+- Fix swapped date and time in the encoding of local file headers.
+  Thanks to Valentin Gatien-Baron for the fix (#5).
 
 - Write entries in the central directory in the same order as files
   are written in the archive. In particular this gives less

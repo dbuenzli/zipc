@@ -471,7 +471,7 @@ let encode_member b m (start, acc) =
   in
   let path = Member.path m in
   let path_length = String.length path in
-  let time, date = Ptime.to_dos_date_time (Member.mtime m) in
+  let date, time = Ptime.to_dos_date_time (Member.mtime m) in
   Bytes.set_int32_le b  (start     ) lfh_sig;
   Bytes.set_uint16_le b (start + 10) time;
   Bytes.set_uint16_le b (start + 12) date;

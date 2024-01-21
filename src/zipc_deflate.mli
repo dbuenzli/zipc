@@ -82,12 +82,12 @@ val inflate :
 (** [inflate s] are the decompressed bytes of the deflate compressed
     data in the range \[[start];[start+len-1]\] of [s]. [start]
     defaults to [0] and [len] defaults to [String.length s -
-    start]. [decompressed_size] is a hint for the size of decompressed
-    data.
+    start]. [decompressed_size] is the expected size of the
+    decompressed data, errors if exceeded.
 
     Returns [Error _] with an english error message if the data is
-    corrupted or if a string cannot hold the decompressed result on
-    32-bit platforms. *)
+    corrupted, if the decompressed data exceeds [decompressed_size]
+    or {!Sys.max_string_length}. *)
 
 val inflate_and_crc_32 :
   ?decompressed_size:int -> ?start:int -> ?len:int -> string ->
@@ -107,15 +107,16 @@ val zlib_decompress :
 (** [zlib_decompress s] are the decompressed bytes of the zlib
     compressed data in the range \[[start];[start+len-1]\] of
     [s]. [start] defaults to [0] and [len] defaults to [String.length
-    s - start]. [decompressed_size] is a hint for the size of
-    decompressed data. The (successfully checked) Adler-32 checksum of
-    the decompressed data is also returned.
+    s - start]. [decompressed_size] is the expected size of
+    decompressed data, errors if exceeded. The (successfully checked)
+    Adler-32 checksum of the decompressed data is also returned.
 
     Returns [Error _] with an english error message if the data is
     corrupted, if the checksum mismatches (in which case you get the
     expected and found CRCs in the option, the error message mentions
-    them), if the stream declares a preset dictionary, or if a string
-    cannot hold the decompressed result on 32-bit platforms. *)
+    them), if the stream declares a preset dictionary, if the decompressed
+    data exceeds [decompressed_size] or {!Sys.max_string_length}. *)
+
 
 (** {1:compression Compression} *)
 

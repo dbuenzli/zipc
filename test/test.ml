@@ -42,6 +42,18 @@ let test_deflate_trip ~level =
   trip (String.init 256 (fun i -> Char.chr ((i + 1) mod 255))); (* None *)
   ()
 
+let test_decompresion_size_limits () =
+  print_endline "Testing Zipc_deflate.inflate decompression size limits";
+  let src = "Keep it to the limits." in
+  let limit = String.length src in
+  let csrc = Zipc_deflate.deflate src |> Result.get_ok in
+  let inflate ~limit = Zipc_deflate.inflate ~decompressed_size:limit csrc in
+  assert (Zipc_deflate.inflate csrc |> Result.get_ok = src);
+  assert (inflate ~limit |> Result.get_ok = src);
+  assert (inflate ~limit:(limit + 1) |> Result.get_ok = src);
+  assert (Result.is_error (inflate ~limit:(limit - 1)));
+  ()
+
 let test_crunched_trip () =
   let redeflate_recode z =
     let redeflate m acc = match Zipc.Member.kind m with
@@ -112,6 +124,7 @@ let main () =
   test_deflate_trip ~level:`Fast;
   test_deflate_trip ~level:`Best;
   test_deflate_trip ~level:`None;
+  test_decompresion_size_limits ();
   test_crunched_trip ();
   print_endline "\027[32;1mSuccess!\027[m"
 

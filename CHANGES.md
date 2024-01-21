@@ -1,4 +1,15 @@
 
+
+- Decompression limits in `Zipc_deflate` (breaking change). When the
+  `decompression_size` argument of decompression functions is
+  specified, decompression errors as soon as the decompressed size
+  exceeds that value. Previously it was only treated as a hint.
+
+- `Zipc.File.to_binary_string`, error if the decompression size starts
+  exceeding `File.decompressed_size` rather than ignoring this value.
+  This allows clients to enforce limits on the decompression of
+  untrusted zip file. Thanks to Valentin Gatien-Baron for suggesting (#1).
+
 - `Zipc.File.make`: fix default value of `version_needed_to_extract`. It
   was the same as `version_made_by` which is wrong. Now defaults
   to `20`(PKZip 2.0). Thanks to Valentin Gatien-Baron for the report (#3).

@@ -14,14 +14,19 @@ let default_length ?len s start = match len with
    buffer directly for CRCs. *)
 
 module Buf = struct
-  type t = { mutable b : bytes; mutable len : int; }
-  let make sz = { b = Bytes.create (if sz = 0 then 1024 else sz); len = 0 }
+  type t = { mutable b : bytes; mutable len : int; fixed : bool; }
+  let make ?(fixed = false) sz =
+    let b = Bytes.create (if sz = 0 && not fixed then 1024 else sz) in
+    { b; len = 0; fixed }
+
   let length buf = buf.len
   let contents buf =
     if buf.len = Bytes.length buf.b
     then Bytes.unsafe_to_string buf.b else Bytes.sub_string buf.b 0 buf.len
 
   let grow ~ensure buf =
+    if buf.fixed (* Note, buf.fixed is only possibly [true] for decompression *)
+    then failwith "Expected decompression size exceeded";
     let newlen = ref (Bytes.length buf.b) in
     let () = while !newlen < ensure do newlen := 2 * !newlen done in
     let () =
@@ -544,7 +549,10 @@ let make_decoder ?decompressed_size:dsize ?(start = 0) ?len src ~crc_op =
   let len = default_length ?len src start in
   let src_max = start + len - 1 and src_pos = start in
   let src_bits = 0 and src_bits_len = 0 in
-  let dst = Buf.make (match dsize with None -> len * 3 | Some d -> d) in
+  let dst = match dsize with
+  | None -> Buf.make ~fixed:false (len * 3)
+  | Some d -> Buf.make ~fixed:true d
+  in
   let dyn_litlen = Huffman.make_decoder () in
   let dyn_dist = Huffman.make_decoder () in
   let crc = crc_op_init crc_op and crc_next = 0 in

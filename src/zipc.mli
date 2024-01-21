@@ -150,7 +150,7 @@ module File : sig
       format, in the range defined by {!start} and {!compressed_size}. *)
 
   val compressed_bytes_to_binary_string : t -> string
-  (** [compressed_bytes_to_bainry_string file] is the range of
+  (** [compressed_bytes_to_binary_string file] is the range of
       {!compressed_bytes} as a tight string. *)
 
   val decompressed_size : t -> int
@@ -195,12 +195,10 @@ module File : sig
       {- The compression format is unsupported (does not happen if
          {!can_extract} is [true]).}
       {- The [Deflate] data is malformed.}
-      {- The decompression size exceeds {!Sys.max_string_length}}
+      {- The decompressed size exceeds {!decompressed_size} or
+         {!Sys.max_string_length}}
       {- The CRC-32 of the data doesn't match the value of
-         {!decompressed_crc_32}.}}
-
-      {b Note.} No error is reported if the actual decompressed size does not
-      match {!decompressed_size}. *)
+         {!decompressed_crc_32}.}} *)
 
   val to_binary_string_no_crc_check :
     t -> (string * Zipc_deflate.Crc_32.t, string) result

@@ -439,6 +439,11 @@ let of_binary_string s =
 
 (* Encoding *)
 
+let cleaned_gp_flags file =
+  (* Bit 3 indicates presence of data descriptors which we never encode.
+     So we make make sure the bit is cleared. *)
+  File.gp_flags file land (lnot (1 lsl 3))
+
 let encoding_size z =
   let add_member m acc =
     let path_len = String.length (Member.path m) in
@@ -460,7 +465,7 @@ let encode_member b m (start, acc) =
   in
   let encode_file_lfh b file start =
     Bytes.set_uint16_le b (start +  4) (File.version_needed_to_extract file);
-    Bytes.set_uint16_le b (start +  6) (File.gp_flags file);
+    Bytes.set_uint16_le b (start +  6) (cleaned_gp_flags file);
     Bytes.set_uint16_le b (start +  8)
       (compression_to_int (File.compression file));
     Bytes.set_int32_le  b (start + 14) (File.decompressed_crc_32 file);
@@ -503,7 +508,7 @@ let encode_cd_member b start (lfh_offset, m) =
   let encode_file_cd_member b file start =
     Bytes.set_uint16_le b (start +  4) (File.version_made_by file);
     Bytes.set_uint16_le b (start +  6) (File.version_needed_to_extract file);
-    Bytes.set_uint16_le b (start +  8) (File.gp_flags file);
+    Bytes.set_uint16_le b (start +  8) (cleaned_gp_flags file);
     Bytes.set_uint16_le b (start + 10)
       (compression_to_int (File.compression file));
     Bytes.set_int32_le  b (start + 16) (File.decompressed_crc_32 file);

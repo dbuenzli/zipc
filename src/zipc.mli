@@ -370,7 +370,9 @@ val to_binary_string : ?first:Fpath.t -> t -> (string, string) result
     {- {!Member.mtime} that are before the {!Ptime.dos_epoch}
        are silently truncated to that date.}
     {- Except for [first], member data is encoded in the (deterministic)
-       increasing lexical order of their path.}} *)
+       increasing lexical order of their path.}
+    {- The encoding does not use data descriptors, so bit 3 of
+       {!File.gp_flags} is always set to [0] on encoding.}} *)
 
 val write_bytes :
   ?first:Fpath.t -> t -> ?start:int -> bytes -> (unit, string) result

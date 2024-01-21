@@ -13,6 +13,12 @@
   was the same as `version_made_by` which is wrong. Now defaults
   to `20`(PKZip 2.0). Thanks to Valentin Gatien-Baron for the report (#3).
 
+- Fix encoding of `Zipc.File.gp_flags`. Bit 3 indicates presence of a
+  data descriptor. Since we never write one, we clear the bit on
+  encoding. Not doing this would result in interoperability issues
+  when rewriting archives that originally had data descriptors. Thanks
+  to Valentin Gatien-Baron for tracking this down (#4).
+
 - Fix swapped date and time in the encoding of local file headers.
   Thanks to Valentin Gatien-Baron for the fix (#5).
 

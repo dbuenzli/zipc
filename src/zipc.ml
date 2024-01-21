@@ -137,6 +137,7 @@ module File = struct
 
   let max_size = uint32_max_or_max_int
   let gp_is_encrypted = 0x1
+  let gp_has_data_descriptor = 0x8
   let gp_utf_8 = 0x800
   let gp_default = gp_utf_8
   let version_made_by_default = (3 (* UNIX *) lsl 8) lor 20 (* PKZIP 2.0 *)
@@ -198,6 +199,7 @@ module File = struct
     String.sub file.compressed_bytes file.start file.compressed_size
 
   let is_encrypted file = file.gp_flags land gp_is_encrypted <> 0
+  let has_data_descriptor file = file.gp_flags land gp_has_data_descriptor <> 0
   let can_extract file =
     not (is_encrypted file) && match file.compression with
     | Stored | Deflate -> true | _ -> false
@@ -339,6 +341,8 @@ let get_lfh_crc_32 s ~start_local =
   (* assert decode_data_start_of_lfh has been called *)
   String.get_int32_le s (start_local + 14)
 
+let lfh_data_descriptor_sig = 0x08074b50l
+
 let cdfh_sig = 0x02014b50l
 let cdfh_min_size = 46
 let decode_member_of_cd s cd_max i =
@@ -442,10 +446,14 @@ let of_binary_string s =
 let encoding_size z =
   let add_member m acc =
     let path_len = String.length (Member.path m) in
-    let data_size = match Member.kind m with
-    | Dir -> 0 | File f -> File.compressed_size f
+    let data_and_data_descriptor_size = match Member.kind m with
+      | Dir -> 0
+      | File f ->
+         File.compressed_size f +
+           if File.has_data_descriptor f then 16 else 0
     in
-    acc + lfh_min_size + path_len + data_size + cdfh_min_size + path_len
+    acc + lfh_min_size + path_len + data_and_data_descriptor_size
+    + cdfh_min_size + path_len
   in
   fold add_member z eocd_min_size
 
@@ -458,16 +466,23 @@ let encode_member b m (start, acc) =
     Bytes.set_int32_le  b (start + 18) 0l (* Compressed size *);
     Bytes.set_int32_le  b (start + 22) 0l (* Uncompressed size *)
   in
-  let encode_file_lfh b file start =
+  let encode_file_lfh b file start ~has_data_descriptor =
     Bytes.set_uint16_le b (start +  4) (File.version_needed_to_extract file);
     Bytes.set_uint16_le b (start +  6) (File.gp_flags file);
     Bytes.set_uint16_le b (start +  8)
       (compression_to_int (File.compression file));
-    Bytes.set_int32_le  b (start + 14) (File.decompressed_crc_32 file);
+    Bytes.set_int32_le  b (start + 14)
+      (if has_data_descriptor then 0l else File.decompressed_crc_32 file);
     Bytes.set_int32_le  b (start + 18)
-      (Int32.of_int (File.compressed_size file));
+      (if has_data_descriptor then 0l else Int32.of_int (File.compressed_size file));
     Bytes.set_int32_le  b (start + 22)
-      (Int32.of_int (File.decompressed_size file))
+      (if has_data_descriptor then 0l else Int32.of_int (File.decompressed_size file))
+  in
+  let encode_data_descriptor_lfh b file start =
+    Bytes.set_int32_le b (start    ) lfh_data_descriptor_sig;
+    Bytes.set_int32_le b (start + 4) (File.decompressed_crc_32 file);
+    Bytes.set_int32_le b (start + 8) (Int32.of_int (File.compressed_size file));
+    Bytes.set_int32_le b (start + 12) (Int32.of_int (File.decompressed_size file));
   in
   let path = Member.path m in
   let path_length = String.length path in
@@ -481,12 +496,15 @@ let encode_member b m (start, acc) =
   let next = match Member.kind m with
   | Dir -> encode_dir_lfh b start; start + 30 + path_length
   | File file ->
-      encode_file_lfh b file start;
+      let has_data_descriptor = File.has_data_descriptor file in
+      encode_file_lfh b file start ~has_data_descriptor;
       let start = start + 30 + path_length in
       let src = File.compressed_bytes file and src_start = File.start file in
       let size = File.compressed_size file in
       Bytes.blit_string src src_start b start size;
-      start + size
+      if has_data_descriptor then
+        encode_data_descriptor_lfh b file (start + size);
+      start + size + (if has_data_descriptor then 16 else 0)
   in
   (next, (start, m) :: acc)
 

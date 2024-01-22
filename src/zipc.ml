@@ -441,7 +441,7 @@ let of_binary_string s =
 
 let cleaned_gp_flags file =
   (* Bit 3 indicates presence of data descriptors which we never encode.
-     So we make make sure the bit is cleared. *)
+     So we make sure the bit is cleared. *)
   File.gp_flags file land (lnot (1 lsl 3))
 
 let encoding_size z =

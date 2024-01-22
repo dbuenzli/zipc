@@ -1,3 +1,5 @@
+v0.2.0 2024-01-22 La Forclaz (VS)
+---------------------------------
 
 - Decompression limits in `Zipc_deflate` (breaking change). When the
   `decompression_size` argument of decompression functions is

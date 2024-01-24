@@ -18,8 +18,7 @@ let data_url s =
   Ok (Jstr.(v "data:;base64," + data))
 
 let download_link path data_url =
-  let download = At.v (Jstr.v "download") (Jstr.v path) in
-  El.a ~at:At.[href data_url; download] [El.txt' path]
+  El.a ~at:At.[href data_url; download (Jstr.v path)] [El.txt' path]
 
 let zip_file file ~compress =
   let path = Jstr.to_string (File.relative_path file) in

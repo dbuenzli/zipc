@@ -19,8 +19,7 @@ let data_url s =
   Ok (Jstr.(v "data:;base64," + data))
 
 let download_link path data_url =
-  let download = At.v (Jstr.v "download") (Jstr.v path) in
-  El.a ~at:At.[href data_url; download] [El.txt' path]
+  El.a ~at:At.[href data_url; download (Jstr.v path)] [El.txt' path]
 
 let unzip_members z ~tty =
   let show_txt s = El.append_children tty [El.txt' s] in

@@ -20,7 +20,7 @@ let zipc_tool =
   let srcs = [`File ~/"test/zipc_tool.ml"] in
   let requires = [cmdliner; unix; zipc] in
   let meta =
-    (* FIXME b0: don't let jsoo builds downgrade everything to bytecode *)
+    (* TODO b0: don't let jsoo builds downgrade everything to bytecode *)
     B0_meta.empty
     |> B0_meta.add B0_ocaml.Code.needs `Native
   in
@@ -29,7 +29,7 @@ let zipc_tool =
 (* Tests *)
 
 let test ~src ~doc =
-  let src = Fpath.(v "test" / src) in
+  let src = Fpath.(~/"test"/ src) in
   let srcs = [ `File src ] in
   let requires = [zipc] in
   let meta = B0_meta.empty |> B0_meta.(tag test) in
@@ -65,7 +65,7 @@ let time_inflate =
     Fmt.error "Need to specify a ZIP archive"
   in
   let* time = B0_env.get_cmd env Cmd.(arg "time" % "-h") in
-  let* zipc = B0_env.unit_cmd env zipc_tool in
+  let* zipc = Result.map Cmd.path (B0_env.unit_exe_file env zipc_tool) in
   let* unzip = B0_env.get_cmd env (Cmd.arg "unzip") in
   let stdout = Os.Cmd.out_null in
   Log.app (fun m -> m "%a vs %a" Fmt.code' "unzip" Fmt.code' "zipc");
@@ -80,14 +80,14 @@ let zipc_for_each =
     Log.if_error ~use:B0_cli.Exit.some_error @@
     let* time = B0_env.get_cmd env Cmd.(arg "time" % "-h") in
     let* xargs = B0_env.get_cmd env Cmd.(arg "xargs" % "-0" % "-P0" % "-L1") in
-    let* zipc = B0_env.unit_cmd env zipc_tool in
+    let* zipc = Result.map Cmd.path (B0_env.unit_exe_file env zipc_tool) in
     let stdin = match list with
     | "-" -> Os.Cmd.in_stdin | file -> Os.Cmd.in_file (Fpath.v list)
     in
     let* () = Os.Cmd.run ~stdin Cmd.(time %% xargs %% zipc %% list args) in
     Ok B0_cli.Exit.ok
   in
-  (* XXX b0: streamline the arg parsing, do a mini getopts. *)
+  (* TODO b0: streamline the arg parsing, do a mini getopts. *)
   let open Cmdliner in
   let list =
     let doc =

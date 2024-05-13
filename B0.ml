@@ -56,7 +56,8 @@ let jsoo =
 
 let time_inflate =
   let doc = "Time unzip and zipc inflation check (-t) on the same archive" in
-  B0_action.make' "time-inflate" ~units:[zipc_tool] ~doc @@ fun _ env ~args ->
+  B0_unit.of_action "time-inflate" ~units:[zipc_tool] ~doc @@
+  fun env _ ~args ->
   let* args =
     if not (Cmd.is_empty args) then Ok args else
     let test = B0_env.in_scope_dir env ~/"tmp/silesia.zip" in
@@ -68,16 +69,17 @@ let time_inflate =
   let* zipc = Result.map Cmd.path (B0_env.unit_exe_file env zipc_tool) in
   let* unzip = B0_env.get_cmd env (Cmd.arg "unzip") in
   let stdout = Os.Cmd.out_null in
-  Log.app (fun m -> m "%a vs %a" Fmt.code' "unzip" Fmt.code' "zipc");
+  Log.app (fun m -> m "%a vs %a" Fmt.code "unzip" Fmt.code "zipc");
   let* () = Os.Cmd.run ~stdout Cmd.(time %% unzip % "-t" %% args) in
   let* () = Os.Cmd.run ~stdout Cmd.(time %% zipc % "unzip" % "-t" %% args) in
   Ok ()
 
 let zipc_for_each =
   let doc = "Invoke zipc on parallel on files in a given null separated list" in
-  B0_action.make "zipc-for-each" ~units:[zipc_tool] ~doc @@ fun a env ~args ->
+  B0_unit.of_action' "zipc-for-each" ~units:[zipc_tool] ~doc @@
+  B0_unit.Action.of_cmdliner_term @@ fun env u ->
   let run list args =
-    Log.if_error ~use:B0_cli.Exit.some_error @@
+    Log.if_error ~use:Os.Exit.some_error @@
     let* time = B0_env.get_cmd env Cmd.(arg "time" % "-h") in
     let* xargs = B0_env.get_cmd env Cmd.(arg "xargs" % "-0" % "-P0" % "-L1") in
     let* zipc = Result.map Cmd.path (B0_env.unit_exe_file env zipc_tool) in
@@ -85,7 +87,7 @@ let zipc_for_each =
     | "-" -> Os.Cmd.in_stdin | file -> Os.Cmd.in_file (Fpath.v list)
     in
     let* () = Os.Cmd.run ~stdin Cmd.(time %% xargs %% zipc %% list args) in
-    Ok B0_cli.Exit.ok
+    Ok Os.Exit.ok
   in
   (* TODO b0: streamline the arg parsing, do a mini getopts. *)
   let open Cmdliner in
@@ -102,7 +104,7 @@ let zipc_for_each =
     in
     Arg.(value & pos_right 0 string [] & info [] ~doc ~docv:"ARGS")
   in
-  B0_action.eval_cmdliner_term a env Term.(const run $ list $ args') ~args
+  Term.(const run $ list $ args')
 
 (* Packs *)
 

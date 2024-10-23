@@ -33,7 +33,7 @@ let test ~src ~doc =
   let srcs = [ `File src ] in
   let requires = [zipc] in
   let meta = B0_meta.empty |> B0_meta.(tag test) in
-  B0_ocaml.exe (Fpath.basename ~strip_ext:true src) ~doc ~meta ~srcs ~requires
+  B0_ocaml.exe (Fpath.basename ~strip_exts:true src) ~doc ~meta ~srcs ~requires
 
 let test' = test ~src:"test.ml" ~doc:"Basic tests"
 let speed_crc_tests = test ~src:"test_crc_speed.ml" ~doc:"CRCs speed test"
@@ -69,7 +69,7 @@ let time_inflate =
   let* zipc = Result.map Cmd.path (B0_env.unit_exe_file env zipc_tool) in
   let* unzip = B0_env.get_cmd env (Cmd.arg "unzip") in
   let stdout = Os.Cmd.out_null in
-  Log.app (fun m -> m "%a vs %a" Fmt.code "unzip" Fmt.code "zipc");
+  Log.stdout (fun m -> m "%a vs %a" Fmt.code "unzip" Fmt.code "zipc");
   let* () = Os.Cmd.run ~stdout Cmd.(time %% unzip % "-t" %% args) in
   let* () = Os.Cmd.run ~stdout Cmd.(time %% zipc % "unzip" % "-t" %% args) in
   Ok ()

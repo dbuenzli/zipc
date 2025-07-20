@@ -19,12 +19,7 @@ let zipc_lib =
 let zipc_tool =
   let srcs = [`File ~/"test/zipc_tool.ml"] in
   let requires = [cmdliner; unix; zipc] in
-  let meta =
-    (* TODO b0: don't let jsoo builds downgrade everything to bytecode *)
-    B0_meta.empty
-    |> B0_meta.add B0_ocaml.Code.needs `Native
-  in
-  B0_ocaml.exe "zipc" ~meta ~public:true ~srcs ~requires
+  B0_ocaml.exe "zipc" ~public:true ~srcs ~requires
 
 (* Tests *)
 

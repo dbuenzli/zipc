@@ -24,11 +24,11 @@ let zipc_tool =
 (* Tests *)
 
 let test ~src ~doc =
-  let src = Fpath.(~/"test"/ src) in
+  let src = Filepath.(~/"test"/ src) in
   let srcs = [ `File src ] in
   let requires = [zipc] in
   let meta = B0_meta.empty |> B0_meta.(tag test) in
-  B0_ocaml.exe (Fpath.basename ~drop_exts:true src) ~doc ~meta ~srcs ~requires
+  B0_ocaml.exe (Filepath.basename ~drop_exts:true src) ~doc ~meta ~srcs ~requires
 
 let test' = test ~src:"test.ml" ~doc:"Basic tests"
 let speed_crc_tests = test ~src:"test_crc_speed.ml" ~doc:"CRCs speed test"
@@ -79,7 +79,7 @@ let zipc_for_each =
     let* xargs = B0_env.get_cmd env Cmd.(arg "xargs" % "-0" % "-P0" % "-L1") in
     let* zipc = Result.map Cmd.path (B0_env.unit_exe_file env zipc_tool) in
     let stdin = match list with
-    | "-" -> Os.Cmd.in_stdin | file -> Os.Cmd.in_file (Fpath.v list)
+    | "-" -> Os.Cmd.in_stdin | file -> Os.Cmd.in_file (Filepath.v list)
     in
     let* () = Os.Cmd.run ~stdin Cmd.(time %% xargs %% zipc %% list args) in
     Ok Os.Exit.ok

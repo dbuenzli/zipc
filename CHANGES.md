@@ -1,3 +1,7 @@
+
+- `Zipc_deflate.zlib_decompress` on string subranges. 
+  Thanks Vladimir N. Silyaev for the patch (#10).
+
 v0.2.0 2024-01-22 La Forclaz (VS)
 ---------------------------------
 

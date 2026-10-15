@@ -728,8 +728,8 @@ let zlib_decompress ?decompressed_size ?(start = 0) ?len s =
     if cm <> 8 then failwithf "Unknown compression method (%d)" cm else
     if cmf lsr 4 > 7 then failwithf "Window size too large" else
     if flg land 0x20 <> 0 then failwith "Preset dictionary unsupported" else
-    let expect = String.get_int32_be s (len - 4) in
-    let start = start + 2 and len = len - 4 in
+    let expect = String.get_int32_be s (start + len - 4) in
+    let start = start + 2 and len = len - 6 in
     match inflate_and_adler_32 ?decompressed_size s ~start ~len with
     | Error e -> failwith e
     | Ok (_, found) as r ->

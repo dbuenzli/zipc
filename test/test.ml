@@ -54,6 +54,37 @@ let test_decompresion_size_limits () =
   assert (Result.is_error (inflate ~limit:(limit - 1)));
   ()
 
+let test_ranges () =
+  print_endline "Testing Zipc_deflate.{inflate,zlib_decompress} ~start ~len";
+  let src = String.init 1000 (fun i -> Char.chr (i * 7 mod 251)) in
+  let check ~decompress z =
+    let n = String.length z in
+    (* The prefix is longer than [z] so that offsets taken from the
+       beginning of the string rather than [start] point into it. *)
+    let prefix = String.make (n + 8) 'P' and suffix = "suffix" in
+    let s = prefix ^ z ^ suffix and start = String.length prefix in
+    assert (decompress ~start ~len:(Some n) s = Ok src);
+    assert (decompress ~start ~len:None (prefix ^ z) = Ok src)
+  in
+  let inflate ~start ~len s = Zipc_deflate.inflate ~start ?len s in
+  let zlib_decompress ~start ~len s =
+    Zipc_deflate.zlib_decompress ~start ?len s |> Result.map fst
+    |> Result.map_error (fun (_, e) -> e)
+  in
+  check ~decompress:inflate (Zipc_deflate.deflate src |> Result.get_ok);
+  let z = Zipc_deflate.zlib_compress src |> Result.get_ok |> snd in
+  check ~decompress:zlib_decompress z;
+  (* A corrupt trailer must be detected even when the bytes at the
+     trailer's offset relative to the beginning of the string hold the
+     right checksum. *)
+  let n = String.length z in
+  let s = Bytes.of_string (String.make (n + 8) 'P' ^ z) in
+  Bytes.blit_string z (n - 4) s (n - 4) 4;
+  Bytes.fill s (n + 8 + n - 4) 4 '\000';
+  let s = Bytes.to_string s in
+  assert (Result.is_error (zlib_decompress ~start:(n + 8) ~len:(Some n) s));
+  ()
+
 let test_crunched_trip () =
   let redeflate_recode z =
     let redeflate m acc = match Zipc.Member.kind m with
@@ -125,6 +156,7 @@ let main () =
   test_deflate_trip ~level:`Best;
   test_deflate_trip ~level:`None;
   test_decompresion_size_limits ();
+  test_ranges ();
   test_crunched_trip ();
   print_endline "\027[32;1mSuccess!\027[m"
 

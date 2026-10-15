@@ -1,3 +1,9 @@
+
+- `Zipc_deflate.zlib_decompress`: fix the Adler-32 checksum being read
+  relative to the beginning of the string rather than to `start`. For
+  data that does not start at `0` this reported spurious checksum
+  mismatches and could accept a stream with a corrupt checksum.
+
 v0.2.0 2024-01-22 La Forclaz (VS)
 ---------------------------------
 

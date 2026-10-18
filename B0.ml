@@ -23,16 +23,16 @@ let zipc_tool =
 
 (* Tests *)
 
-let test ~src ~doc =
-  let src = Filepath.(~/"test"/ src) in
-  let srcs = [ `File src ] in
-  let requires = [zipc] in
-  let meta = B0_meta.empty |> B0_meta.(tag test) in
-  B0_ocaml.exe (Filepath.basename ~drop_exts:true src) ~doc ~meta ~srcs ~requires
+let test ?(requires = []) =
+  B0_ocaml.test ~requires:(zipc :: requires)
 
-let test' = test ~src:"test.ml" ~doc:"Basic tests"
-let speed_crc_tests = test ~src:"test_crc_speed.ml" ~doc:"CRCs speed test"
-let examples = test ~src:"examples.ml" ~doc:"Documentation examples"
+let test' = test ~/"test/test.ml" ~doc:"Basic tests"
+let speed_crc_tests =
+  test ~/"test/test_crc_speed.ml" ~doc:"CRCs speed test" ~run:false
+
+let examples =
+  test ~/"test/examples.ml" ~doc:"Documentation examples" ~run:false
+
 let jsoo =
   let doc = "Test unzip in the browser" in
   let srcs = [ `File ~/"test/jsoo_unzip.ml" ] in

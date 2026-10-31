@@ -2,6 +2,12 @@
 - `Zipc_deflate.zlib_decompress` on string subranges. 
   Thanks Vladimir N. Silyaev for the patch (#10).
 
+- Fix `Zipc_deflate.Adler_32` when a running sum exceeds 2^31. This
+  also affected the zlib trailers written by
+  `Zipc_deflate.zlib_compress` and checked by
+  `Zipc_deflate.zlib_decompress`. Thanks to @ultramarineslopmachine
+  for the report and the fix (#11).
+
 v0.2.0 2024-01-22 La Forclaz (VS)
 ---------------------------------
 

@@ -92,7 +92,7 @@ module Uint32 = struct
     let (lxor) = Int32.logxor
     let (lsr) = Int32.shift_right_logical
     let (lsl) = Int32.shift_left
-    let (mod) = Int32.rem
+    let (mod) = Int32.unsigned_rem
     let ( #+ ) = Int32.add
     let ( #- ) = Int32.sub
   end

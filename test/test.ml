@@ -23,6 +23,18 @@ let test_adler_32 () =
   print_endline "Testing Zipc_deflate.Adler_32";
   assert (Zipc_deflate.Adler_32.string "" = 1l);
   assert (Zipc_deflate.Adler_32.string crc_test = 0x5bdc0fdal);
+  (* s2 exceeds 2^31 in the first block. *)
+  let s = String.make 5552 '\xff' in
+  assert (Zipc_deflate.Adler_32.string s = 0xf18f9b8cl);
+  let a, z = Zipc_deflate.zlib_compress s |> Result.get_ok in
+  assert (a = 0xf18f9b8cl);
+  assert (String.sub z (String.length z - 4) 4 = "\xf1\x8f\x9b\x8c");
+  assert (Zipc_deflate.zlib_decompress z |> Result.map fst = Ok s);
+  let zlib = (* Python's zlib.compress (b'\xff' * 5552) *)
+    "\x78\x9c\xed\xc1\x31\x01\x00\x00\x00\xc2\xa0\xfe\xa9\x67\x0d\x0f\xa0\
+     \x00\x00\x00\x00\x00\x78\x30\xf1\x8f\x9b\x8c"
+  in
+  assert (Zipc_deflate.zlib_decompress zlib |> Result.map fst = Ok s);
   ()
 
 let test_deflate_trip ~level =
